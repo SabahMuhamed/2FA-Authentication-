@@ -1,0 +1,51 @@
+import pyotp
+import qrcode
+import time
+import os
+
+def generate_secret():
+    """Generate a base32 secret key."""
+    return pyotp.random_base32()
+
+def create_qr_code(secret, user_email="user@example.com", issuer="2FAGen"):
+    """Generate and display a QR code for Google Authenticator setup."""
+    uri = pyotp.totp.TOTP(secret).provisioning_uri(name=user_email, issuer_name=issuer)
+    qr = qrcode.make(uri)
+    print("[*] Scan this QR code with Google Authenticator:")
+    qr.show()
+
+def get_otp(secret):
+    """Generate the current OTP."""
+    totp = pyotp.TOTP(secret)
+    return totp.now()
+
+def verify_otp(secret, otp_input):
+    """Verify the OTP entered by the user."""
+    totp = pyotp.TOTP(secret)
+    return totp.verify(otp_input)
+
+def main():
+    print("=== 2FAGen: Two-Factor Authentication Generator ===\n")
+
+    # Step 1: Generate and display the secret
+    secret = generate_secret()
+    print(f"[+] Your secret key (save this securely): {secret}\n")
+
+    # Step 2: (Optional) Generate QR Code
+    create_qr_code(secret)
+
+    # Step 3: Show OTP for testing
+    print(f"[+] Current OTP (for testing): {get_otp(secret)}")
+    print(">> This OTP will refresh every 30 seconds.\n")
+
+    # Step 4: Wait for user input
+    otp_input = input("Enter the OTP: ")
+
+    # Step 5: Verify OTP
+    if verify_otp(secret, otp_input):
+        print("✅ OTP Verified. Access Granted.")
+    else:
+        print("❌ Invalid OTP. Access Denied.")
+
+if __name__ == "__main__":
+    main()
